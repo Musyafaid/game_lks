@@ -20,13 +20,14 @@
     <div
       class="relative w-[600px] h-[400px] bg-black border-4 border-gray-600 overflow-hidden"
     >
-      <!-- PLAYER -->
       <div
-        class="absolute w-10 h-10 "
-        :style="{ left: player.x + 'px', top: player.y + 'px' }"
-      >
-        ✈️
-      </div>
+        class="absolute w-10 h-10 bg-no-repeat bg-contain"
+        :style="{
+          left: player.x + 'px',
+          top: player.y + 'px',
+          backgroundImage: `url(${planeImg})`,
+        }"
+      ></div>
 
       <!-- BULLETS -->
       <div
@@ -67,132 +68,126 @@
       Leaderboard
     </button>
 
-    <button @click="logout" class="px-6 py-2 bg-red-600 rounded">
-      Logout
-    </button>
+    <button @click="logout" class="px-6 py-2 bg-red-600 rounded">Logout</button>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue"
-import axios from "axios"
+import { ref, onMounted, onUnmounted } from "vue";
+import axios from "axios";
+import planeImg from "../assets/plane.png";
 
-const API_URL = "http://127.0.0.1:8000/api"
+const API_URL = "http://127.0.0.1:8000/api";
 
-const timeLeft = ref(30)
-const score = ref(0)
-const gameOver = ref(false)
+const timeLeft = ref(30);
+const score = ref(0);
+const gameOver = ref(false);
 
-const player = ref({ x: 280, y: 330 })
-const bullets = ref([])
-const enemies = ref([])
+const player = ref({ x: 280, y: 330 });
+const bullets = ref([]);
+const enemies = ref([]);
 
-let timer, enemyInterval, gameLoop
+let timer, enemyInterval, gameLoop;
 
 // ⏱ TIMER
 const startTimer = () => {
   timer = setInterval(() => {
-    timeLeft.value--
-    if (timeLeft.value <= 0) endGame()
-  }, 1000)
-}
+    timeLeft.value--;
+    if (timeLeft.value <= 0) endGame();
+  }, 1000);
+};
 
 // 👾 SPAWN MUSUH
 const spawnEnemy = () => {
   enemies.value.push({
     x: Math.random() * 560,
     y: 0,
-  })
-}
+  });
+};
 
 // 🎮 GAME LOOP
 const updateGame = () => {
   // gerak peluru
-  bullets.value.forEach(b => (b.y -= 8))
-  bullets.value = bullets.value.filter(b => b.y > -10)
+  bullets.value.forEach((b) => (b.y -= 8));
+  bullets.value = bullets.value.filter((b) => b.y > -10);
 
   // gerak musuh
-  enemies.value.forEach(e => (e.y += 3))
-  enemies.value = enemies.value.filter(e => e.y < 400)
+  enemies.value.forEach((e) => (e.y += 3));
+  enemies.value = enemies.value.filter((e) => e.y < 400);
 
   // collision
   enemies.value.forEach((e, ei) => {
     bullets.value.forEach((b, bi) => {
-      if (
-        b.x < e.x + 30 &&
-        b.x + 5 > e.x &&
-        b.y < e.y + 30 &&
-        b.y + 10 > e.y
-      ) {
-        enemies.value.splice(ei, 1)
-        bullets.value.splice(bi, 1)
-        score.value += 10
+      if (b.x < e.x + 30 && b.x + 5 > e.x && b.y < e.y + 30 && b.y + 10 > e.y) {
+        enemies.value.splice(ei, 1);
+        bullets.value.splice(bi, 1);
+        score.value += 10;
       }
-    })
-  })
-}
+    });
+  });
+};
 
 // ⌨️ KONTROL
-const handleKey = e => {
-  if (gameOver.value) return
+const handleKey = (e) => {
+  if (gameOver.value) return;
 
   switch (e.code) {
     case "ArrowLeft":
-      player.value.x = Math.max(0, player.value.x - 15)
-      break
+      player.value.x = Math.max(0, player.value.x - 15);
+      break;
     case "ArrowRight":
-      player.value.x = Math.min(560, player.value.x + 15)
-      break
+      player.value.x = Math.min(560, player.value.x + 15);
+      break;
     case "ArrowUp":
-      player.value.y = Math.max(0, player.value.y - 15)
-      break
+      player.value.y = Math.max(0, player.value.y - 15);
+      break;
     case "ArrowDown":
-      player.value.y = Math.min(360, player.value.y + 15)
-      break
+      player.value.y = Math.min(360, player.value.y + 15);
+      break;
     case "Space":
       bullets.value.push({
         x: player.value.x + 18,
         y: player.value.y,
-      })
-      break
+      });
+      break;
   }
-}
+};
 
 const endGame = () => {
-  gameOver.value = true
-  clearInterval(timer)
-  clearInterval(enemyInterval)
-  clearInterval(gameLoop)
-}
+  gameOver.value = true;
+  clearInterval(timer);
+  clearInterval(enemyInterval);
+  clearInterval(gameLoop);
+};
 
 const submitScore = async () => {
-  const token = localStorage.getItem("token")
+  const token = localStorage.getItem("token");
   await axios.post(
     `${API_URL}/score`,
     { score: score.value },
-    { headers: { Authorization: `Bearer ${token}` } }
-  )
-  alert("Score terkirim!")
-}
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  alert("Score terkirim!");
+};
 
 const logout = () => {
-  localStorage.removeItem("token")
-  window.location.href = "/login"
-}
+  localStorage.removeItem("token");
+  window.location.href = "/login";
+};
 
 const goLeaderboard = () => {
-  window.location.href = "/leaderboard"
-}
+  window.location.href = "/leaderboard";
+};
 
 onMounted(() => {
-  startTimer()
-  enemyInterval = setInterval(spawnEnemy, 1500)
-  gameLoop = setInterval(updateGame, 50)
-  window.addEventListener("keydown", handleKey)
-})
+  startTimer();
+  enemyInterval = setInterval(spawnEnemy, 1500);
+  gameLoop = setInterval(updateGame, 50);
+  window.addEventListener("keydown", handleKey);
+});
 
 onUnmounted(() => {
-  window.removeEventListener("keydown", handleKey)
-  endGame()
-})
+  window.removeEventListener("keydown", handleKey);
+  endGame();
+});
 </script>
